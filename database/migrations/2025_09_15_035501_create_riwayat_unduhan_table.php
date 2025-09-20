@@ -17,6 +17,7 @@ return new class extends Migration
         $table->foreignId('user_id')->constrained('users')->notNull(); // user role = penerbangan
         $table->foreignId('maskapai_id')->constrained('maskapai')->notNull(); // redundansi terkontrol utk filter cepat per maskapai
         $table->dateTime('tanggal_unduh')->notNull();
+        $table->timestamps(); // TAMBAHKAN INI
         
         $table->index(['dokumen_id']);
         $table->index(['user_id']);
