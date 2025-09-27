@@ -59,12 +59,13 @@
             <!-- Sidebar -->
             <div class="col-md-3 col-lg-2 px-0">
                 <div class="sidebar p-3">
-                    <div class="text-center mb-4">
-                        <h4 class="text-white fw-bold">
-                            <i class="fas fa-cloud-sun"></i> LDP BMKG
-                        </h4>
-                        <small class="text-light">I Gusti Ngurah Rai</small>
-                    </div>
+                   <div class="d-flex align-items-center mb-4">
+    <img src="{{ asset('images/logo-bmkg.png') }}" alt="Logo LDP BMKG" class="me-3" style="width: 45px; height: 45px; object-fit: contain;">
+    <div>
+        <h6 class="text-white fw-bold mb-1">LDP BMKG</h6>
+        <small class="text-light">I Gusti Ngurah Rai</small>
+    </div>
+</div>
                     
                     <div class="mb-3">
                         <small class="text-light opacity-75">Halo, {{ Auth::user()->nama }}</small><br>
