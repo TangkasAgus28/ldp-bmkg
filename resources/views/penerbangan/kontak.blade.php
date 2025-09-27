@@ -80,9 +80,8 @@
                                 Jam Operasional
                             </h6>
                             <ul class="list-unstyled">
-                                <li><strong>Senin - Jumat:</strong> 07:00 - 16:00 WITA</li>
-                                <li><strong>Sabtu:</strong> 07:00 - 12:00 WITA</li>
-                                <li><strong>Minggu:</strong> Libur</li>
+                                <li><strong>Senin - Jumat:</strong> 08:00 - 16:00 WITA</li>
+                                <li><strong>Sabtu & Minggu:</strong> Tidak Beroprasi</li>
                                 <li class="mt-2">
                                     <small class="text-muted">
                                         <i class="fas fa-info-circle me-1"></i>

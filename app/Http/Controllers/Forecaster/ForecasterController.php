@@ -126,18 +126,85 @@ class ForecasterController extends Controller
         return view('forecaster.riwayat', compact('riwayat'));
     }
 
-    // LAPORAN BULANAN
-    public function laporanBulanan()
-    {
-        $tahun = request('tahun', date('Y'));
-        $laporan = LaporanBulanan::where('user_id', Auth::id())
-                                 ->where('jenis_laporan', 'unggahan')
-                                 ->where('tahun', $tahun)
-                                 ->orderBy('bulan')
-                                 ->get();
+    // LAPORAN BULANAN 
+public function laporanBulanan(Request $request)
+{
+    $tahun = $request->get('tahun', date('Y'));
+    
+    // Generate laporan otomatis
+    $this->generateLaporanBulanan($tahun);
+    
+    $laporan = LaporanBulanan::where('user_id', Auth::id())
+                             ->where('jenis_laporan', 'unggahan')
+                             ->where('tahun', $tahun)
+                             ->orderBy('bulan')
+                             ->get();
 
-        return view('forecaster.laporan', compact('laporan', 'tahun'));
+    // Jika request download PDF
+    if ($request->has('export') && $request->get('export') === 'pdf') {
+        return $this->downloadLaporanPDF($laporan, $tahun);
     }
+
+    return view('forecaster.laporan', compact('laporan', 'tahun'));
+}
+
+// Download Laporan PDF untuk Forecaster
+private function downloadLaporanPDF($laporan, $tahun)
+{
+    $user = Auth::user();
+    $totalUnggahan = $laporan->sum('total');
+    $bulanAktif = $laporan->where('total', '>', 0)->count();
+    
+    $data = [
+        'laporan' => $laporan,
+        'tahun' => $tahun,
+        'user' => $user,
+        'totalUnggahan' => $totalUnggahan,
+        'bulanAktif' => $bulanAktif,
+        'tanggalGenerate' => now()->format('d F Y H:i')
+    ];
+
+    $filename = 'Laporan_Unggahan_Forecaster_' . $tahun . '.html';
+    
+    return response()
+        ->view('forecaster.laporan-pdf', $data)
+        ->header('Content-Type', 'text/html; charset=utf-8')
+        ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+}
+
+// Generate laporan unggahan untuk Forecaster
+private function generateLaporanBulanan($tahun)
+{
+    for ($bulan = 1; $bulan <= 12; $bulan++) {
+        // Hitung total unggahan untuk bulan ini
+        $totalUnggahan = DokumenHarian::where('forecaster_id', Auth::id())
+                                     ->whereYear('tanggal_upload', $tahun)
+                                     ->whereMonth('tanggal_upload', $bulan)
+                                     ->count();
+
+        // Cari existing record
+        $existing = LaporanBulanan::where([
+            'user_id' => Auth::id(),
+            'tahun' => $tahun,
+            'bulan' => $bulan,
+            'jenis_laporan' => 'unggahan'
+        ])->first();
+
+        if ($existing) {
+            // UPDATE existing record dengan data terbaru
+            $existing->update(['total' => $totalUnggahan]);
+        } else {
+            // CREATE new record
+            LaporanBulanan::create([
+                'user_id' => Auth::id(),
+                'bulan' => $bulan,
+                'tahun' => $tahun,
+                'total' => $totalUnggahan,
+                'jenis_laporan' => 'unggahan'
+            ]);
+        }
+    }
+}
 
     // INFO KONTAK
     public function infoKontak()

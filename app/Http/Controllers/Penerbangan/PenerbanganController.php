@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Response;
+use PDF;
 
 class PenerbanganController extends Controller
 {
@@ -73,15 +74,10 @@ class PenerbanganController extends Controller
     }
 
     // LAPORAN BULANAN
-    public function laporanBulanan()
+    public function laporanBulanan(Request $request)
     {
-        $tahun = request('tahun', date('Y'));
-        $laporan = LaporanBulanan::where('user_id', Auth::id())
-                                 ->where('jenis_laporan', 'unduhan')
-                                 ->where('tahun', $tahun)
-                                 ->orderBy('bulan')
-                                 ->get();
-
+        $tahun = $request->get('tahun', date('Y'));
+        
         // Buat laporan otomatis jika belum ada
         $this->generateLaporanBulanan($tahun);
 
@@ -91,7 +87,74 @@ class PenerbanganController extends Controller
                                  ->orderBy('bulan')
                                  ->get();
 
+        // Jika request download
+        if ($request->has('export')) {
+            if ($request->get('export') === 'pdf') {
+                return $this->downloadLaporanPDF($laporan, $tahun);
+            } elseif ($request->get('export') === 'excel') {
+                return $this->downloadLaporanExcel($laporan, $tahun);
+            }
+        }
+
         return view('penerbangan.laporan', compact('laporan', 'tahun'));
+    }
+
+    // Download Laporan PDF (HTML format yang bisa di-print sebagai PDF)
+    private function downloadLaporanPDF($laporan, $tahun)
+    {
+        $user = Auth::user();
+        $maskapai = $user->maskapai;
+        $totalUnduhan = $laporan->sum('total');
+        $bulanAktif = $laporan->where('total', '>', 0)->count();
+        
+        $data = [
+            'laporan' => $laporan,
+            'tahun' => $tahun,
+            'user' => $user,
+            'maskapai' => $maskapai,
+            'totalUnduhan' => $totalUnduhan,
+            'bulanAktif' => $bulanAktif,
+            'tanggalGenerate' => now()->format('d F Y H:i')
+        ];
+
+        // Filename
+        $filename = 'Laporan_Unduhan_' . ($maskapai->kode ?? 'Unknown') . '_' . $tahun . '.html';
+        
+        // Return HTML yang bisa di-print/save sebagai PDF dari browser
+        return response()
+            ->view('penerbangan.laporan-pdf', $data)
+            ->header('Content-Type', 'text/html; charset=utf-8')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
+
+    // Download Laporan Excel (CSV format sederhana)
+    private function downloadLaporanExcel($laporan, $tahun)
+    {
+        $user = Auth::user();
+        $maskapai = $user->maskapai;
+        
+        $csvData = "LAPORAN BULANAN UNDUHAN DOKUMEN\n";
+        $csvData .= "Maskapai: " . ($maskapai->nama ?? 'Unknown') . " (" . ($maskapai->kode ?? 'N/A') . ")\n";
+        $csvData .= "Tahun: " . $tahun . "\n";
+        $csvData .= "Diunduh pada: " . now()->format('d F Y H:i') . "\n\n";
+        
+        $csvData .= "Bulan,Tahun,Total Unduhan,Status\n";
+        
+        foreach ($laporan as $item) {
+            $bulan = \DateTime::createFromFormat('!m', $item->bulan)->format('F');
+            $status = $item->total > 0 ? 'Aktif' : 'Tidak Ada';
+            $csvData .= $bulan . "," . $item->tahun . "," . $item->total . "," . $status . "\n";
+        }
+        
+        $csvData .= "\nRINGKASAN:\n";
+        $csvData .= "Total Unduhan," . $laporan->sum('total') . "\n";
+        $csvData .= "Bulan Aktif," . $laporan->where('total', '>', 0)->count() . "\n";
+        
+        $filename = 'Laporan_Unduhan_' . ($maskapai->kode ?? 'Unknown') . '_' . $tahun . '.csv';
+        
+        return response($csvData)
+            ->header('Content-Type', 'text/csv')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
 
     // INFO KONTAK
@@ -101,10 +164,17 @@ class PenerbanganController extends Controller
         return view('penerbangan.kontak', compact('kontak'));
     }
 
-    // Helper function untuk generate laporan bulanan
+    // Helper function untuk generate laporan bulanan (PERBAIKAN)
     private function generateLaporanBulanan($tahun)
     {
         for ($bulan = 1; $bulan <= 12; $bulan++) {
+            // Hitung total unduhan untuk bulan ini
+            $totalUnduhan = RiwayatUnduhan::where('user_id', Auth::id())
+                                         ->whereYear('tanggal_unduh', $tahun)
+                                         ->whereMonth('tanggal_unduh', $bulan)
+                                         ->count();
+
+            // Cari existing record
             $existing = LaporanBulanan::where([
                 'user_id' => Auth::id(),
                 'tahun' => $tahun,
@@ -112,12 +182,11 @@ class PenerbanganController extends Controller
                 'jenis_laporan' => 'unduhan'
             ])->first();
 
-            if (!$existing) {
-                $totalUnduhan = RiwayatUnduhan::where('user_id', Auth::id())
-                                             ->whereYear('tanggal_unduh', $tahun)
-                                             ->whereMonth('tanggal_unduh', $bulan)
-                                             ->count();
-
+            if ($existing) {
+                // UPDATE existing record dengan data terbaru
+                $existing->update(['total' => $totalUnduhan]);
+            } else {
+                // CREATE new record
                 LaporanBulanan::create([
                     'user_id' => Auth::id(),
                     'bulan' => $bulan,
