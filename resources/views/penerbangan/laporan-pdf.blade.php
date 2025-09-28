@@ -1,21 +1,69 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <title>Laporan Bulanan Unduhan - {{ $maskapai->nama ?? 'Unknown' }}</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
-        .info { margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #f2f2f2; font-weight: bold; }
-        .summary { background-color: #f9f9f9; padding: 15px; margin: 20px 0; border-left: 4px solid #007bff; }
-        .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #666; }
-        .status-aktif { color: #28a745; font-weight: bold; }
-        .status-tidak { color: #6c757d; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+        }
+
+        .info {
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        .summary {
+            background-color: #f9f9f9;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .status-aktif {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .status-tidak {
+            color: #6c757d;
+        }
     </style>
 </head>
+
 <body>
     <div class="header">
         <h1>LAPORAN BULANAN UNDUHAN DOKUMEN</h1>
@@ -78,20 +126,20 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($laporan as $index => $item)
-            <tr>
-                <td>{{ $index + 1 }}</td>
-                <td>{{ DateTime::createFromFormat('!m', $item->bulan)->format('F') }}</td>
-                <td>{{ $item->tahun }}</td>
-                <td>{{ $item->total }}</td>
-                <td>
-                    @if($item->total > 0)
-                        <span class="status-aktif">Aktif</span>
-                    @else
-                        <span class="status-tidak">Tidak Ada</span>
-                    @endif
-                </td>
-            </tr>
+            @foreach ($laporan as $index => $item)
+                <tr>
+                    <td>{{ $index + 1 }}</td>
+                    <td>{{ DateTime::createFromFormat('!m', $item->bulan)->format('F') }}</td>
+                    <td>{{ $item->tahun }}</td>
+                    <td>{{ $item->total }}</td>
+                    <td>
+                        @if ($item->total > 0)
+                            <span class="status-aktif">Aktif</span>
+                        @else
+                            <span class="status-tidak">Tidak Ada</span>
+                        @endif
+                    </td>
+                </tr>
             @endforeach
         </tbody>
     </table>
@@ -111,4 +159,5 @@
         }
     </script>
 </body>
+
 </html>

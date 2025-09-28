@@ -99,19 +99,23 @@ class ForecasterController extends Controller
         return redirect()->route('forecaster.dokumen.index')->with('success', 'Dokumen berhasil diperbarui.');
     }
 
-    public function deleteDokumen($id)
-    {
-        $dokumen = DokumenHarian::where('forecaster_id', Auth::id())->findOrFail($id);
-        
-        // Hapus file
-        if ($dokumen->file_path) {
-            Storage::disk('public')->delete($dokumen->file_path);
-        }
-
-        $dokumen->delete();
-
-        return redirect()->route('forecaster.dokumen.index')->with('success', 'Dokumen berhasil dihapus.');
+   public function deleteDokumen($id)
+{
+    $dokumen = DokumenHarian::where('forecaster_id', Auth::id())->findOrFail($id);
+    
+    // Hapus semua riwayat unduhan yang terkait dengan dokumen ini
+    RiwayatUnduhan::where('dokumen_id', $dokumen->id)->delete();
+    
+    // Hapus file fisik dari storage
+    if ($dokumen->file_path) {
+        Storage::disk('public')->delete($dokumen->file_path);
     }
+
+    // Hapus dokumen dari database
+    $dokumen->delete();
+
+    return redirect()->route('forecaster.dokumen.index')->with('success', 'Dokumen dan semua riwayat terkait berhasil dihapus.');
+}
 
     // RIWAYAT UNDUHAN
     public function riwayatUnduhan()

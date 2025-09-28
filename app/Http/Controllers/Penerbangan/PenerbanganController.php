@@ -37,7 +37,7 @@ class PenerbanganController extends Controller
         $dokumen = DokumenHarian::findOrFail($id);
         $user = Auth::user();
 
-        // Cek apakah user sudah pernah download dokumen ini
+        // Cek user sudah/belum download dokumen ini
         $sudahDownload = RiwayatUnduhan::where([
             'dokumen_id' => $dokumen->id,
             'user_id' => $user->id
@@ -99,7 +99,7 @@ class PenerbanganController extends Controller
         return view('penerbangan.laporan', compact('laporan', 'tahun'));
     }
 
-    // Download Laporan PDF (HTML format yang bisa di-print sebagai PDF)
+    // Download Laporan PDF
     private function downloadLaporanPDF($laporan, $tahun)
     {
         $user = Auth::user();
@@ -120,14 +120,14 @@ class PenerbanganController extends Controller
         // Filename
         $filename = 'Laporan_Unduhan_' . ($maskapai->kode ?? 'Unknown') . '_' . $tahun . '.html';
         
-        // Return HTML yang bisa di-print/save sebagai PDF dari browser
+        // Return HTML sebagai PDF dari browser
         return response()
             ->view('penerbangan.laporan-pdf', $data)
             ->header('Content-Type', 'text/html; charset=utf-8')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
 
-    // Download Laporan Excel (CSV format sederhana)
+    // Download Laporan pdf
     private function downloadLaporanExcel($laporan, $tahun)
     {
         $user = Auth::user();
